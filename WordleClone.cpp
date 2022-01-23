@@ -1,11 +1,3 @@
-/********************************************************************************
- * File:     Homework 3
- * Author:   Bradyn Braithwaite
- * Purpose:	 Recreate the Wordle minigame in C++
- * Version:  1.2 Jan 22, 2022
- * Resources: copied Wordle's dictionary from their website lol
- ********************************************************************************/
-
 #include <cstdlib>
 #include <ctime>
 #include <fstream>
