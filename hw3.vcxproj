@@ -139,14 +139,27 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
-    <ClInclude Include="controlstrings.h" />
     <ClInclude Include="wordleHelper.h" />
-    <ClInclude Include="splashfont.h" />
-    <ClInclude Include="WordleSolutions.txt" />
-    <ClInclude Include="WordleWords.txt" />
+    <ClInclude Include="splashtext.h" />
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="Homework3_BradynBraithwaite.cpp" />
+  </ItemGroup>
+  <ItemGroup>
+    <Text Include="English.txt" />
+    <Text Include="Wiki.txt" />
+    <Text Include="words3.txt" />
+    <Text Include="words3sol.txt" />
+    <Text Include="words4.txt" />
+    <Text Include="words4sol.txt" />
+    <Text Include="words5.txt" />
+    <Text Include="words5sol.txt" />
+    <Text Include="words6.txt" />
+    <Text Include="words6sol.txt" />
+    <Text Include="words7.txt" />
+    <Text Include="words7sol.txt" />
+    <Text Include="words8.txt" />
+    <Text Include="words8sol.txt" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

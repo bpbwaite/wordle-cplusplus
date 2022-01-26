@@ -15,19 +15,10 @@
     </Filter>
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="WordleSolutions.txt">
-      <Filter>Resource Files</Filter>
-    </ClInclude>
-    <ClInclude Include="WordleWords.txt">
-      <Filter>Resource Files</Filter>
-    </ClInclude>
-    <ClInclude Include="splashfont.h">
+    <ClInclude Include="splashtext.h">
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="wordleHelper.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="controlstrings.h">
       <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>
@@ -35,5 +26,49 @@
     <ClCompile Include="Homework3_BradynBraithwaite.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
+  </ItemGroup>
+  <ItemGroup>
+    <Text Include="English.txt">
+      <Filter>Resource Files</Filter>
+    </Text>
+    <Text Include="words4.txt">
+      <Filter>Resource Files</Filter>
+    </Text>
+    <Text Include="words6.txt">
+      <Filter>Resource Files</Filter>
+    </Text>
+    <Text Include="words7.txt">
+      <Filter>Resource Files</Filter>
+    </Text>
+    <Text Include="words5.txt">
+      <Filter>Resource Files</Filter>
+    </Text>
+    <Text Include="words5sol.txt">
+      <Filter>Resource Files</Filter>
+    </Text>
+    <Text Include="Wiki.txt">
+      <Filter>Resource Files</Filter>
+    </Text>
+    <Text Include="words4sol.txt">
+      <Filter>Resource Files</Filter>
+    </Text>
+    <Text Include="words7sol.txt">
+      <Filter>Resource Files</Filter>
+    </Text>
+    <Text Include="words6sol.txt">
+      <Filter>Resource Files</Filter>
+    </Text>
+    <Text Include="words8sol.txt">
+      <Filter>Resource Files</Filter>
+    </Text>
+    <Text Include="words8.txt">
+      <Filter>Resource Files</Filter>
+    </Text>
+    <Text Include="words3.txt">
+      <Filter>Resource Files</Filter>
+    </Text>
+    <Text Include="words3sol.txt">
+      <Filter>Resource Files</Filter>
+    </Text>
   </ItemGroup>
 </Project>
