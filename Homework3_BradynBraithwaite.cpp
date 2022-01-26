@@ -2,165 +2,229 @@
  * File:     Homework 3
  * Author:   Bradyn Braithwaite
  * Purpose:	 Recreate the Wordle minigame in C++
- * Version:  1.2 Jan 22, 2022
- * Resources: copied Wordle's dictionary from their website lol
+ * Version:  2.2 Jan 24, 2022
+ * Resources: frequency lists, occasionally documentation for file io
  ********************************************************************************/
 
+#include <iostream>
+#include <fstream>
+#include <string>
+#include <vector>
 #include <cstdlib>
 #include <ctime>
-#include <fstream>
-#include <iostream>
-#include <string>
+#include <climits>
+
+#include "wordleHelper.h"
 
 using namespace std;
 
-// EXTERNAL FUNCTIONS
+int main(void)
+{
+	// DEFINITIONS & PRECONFIGURATION
+	// unique solutions for 3/4/5/6/7/8. these values work well enough
+	constexpr int SOLUTIONS_PER_GAME[] = { 120, 900, 1400, 2000, 3200, 2400 };
+	constexpr bool REBUILD_SOLUTIONS = false; // set to true for one run if changing solutions
 
-#include "splashfont.h"
-#include "wordleHelper.h"
+	constexpr int MODE_NORMAL = 0;
 
-int main(void) {
-	// configuration: set number of attempts allowed
-	const int maxguesses = 6;
+	constexpr int MODE_BABY = 1;
+	constexpr int MODE_EASY = 2;
+	constexpr int MODE_HARD = 3;
+	constexpr int MODE_EXPERT = 4;
+	constexpr int MODE_INSANE = 5;
 
-	// FILE SETUP
-	cout << "Loading..." << endl;
-	fstream allwords("WordleWords.txt", ios::in);
-	fstream solutionwords("WordleSolutions.txt", ios::in);
-	if (!allwords.is_open() || !solutionwords.is_open()) {
-		cerr << color::red << "Unable to open dictionary files!" << color::wht << endl;
-		return -2;
+	int mode = MODE_NORMAL;
+	int streak = 0;
+	int diffdefs[] = { 6, 5, 6, 3, 7, 4, 7, 6, 8, 7, 9, 8 }; // Guesses,Wordlength: for 3-8 letters
+
+	if (REBUILD_SOLUTIONS) {
+		for (int wordLengths = 3; wordLengths <= 8; wordLengths++) {
+			scrapeEnglishWordsToFile(wordLengths);
+			scrapeCommonWordsToFile(wordLengths, SOLUTIONS_PER_GAME[wordLengths - 3]);
+		}
 	}
-	string buf;
-	solutionwords >> buf; // read the indicator on line 1
-	const int numSolutions = atoi(buf.c_str());
-	allwords >> buf; // read the indicator on line 1
-	const int numWords = atoi(buf.c_str());
-	cout << "Loaded " << numSolutions + numWords << " words!" << endl;
-	srand((unsigned int)time(NULL));
 
 	// MAIN LOOP
-	while (true) { // infinite so long as someone wants to play
+	while (!REBUILD_SOLUTIONS) {
+		bool modechange = false;
+		int maxGuesses = diffdefs[mode * 2];
+		int wordleLength = diffdefs[mode * 2 + 1];
 
-		printSplash(); // cool intro
+		// FILE SETUP & WORD COUNTER
+		string wordFileName = "words" + to_string(wordleLength) + ".txt";
+		string solutionFileName = "words" + to_string(wordleLength) + "sol.txt";
+		fstream AllWords(wordFileName, ios::in);
+		fstream SolutionWords(solutionFileName, ios::in);
+
+		if (!AllWords.is_open() || !SolutionWords.is_open()) {
+			cerr << color::red << "Unable to open local dictionary files!" << color::white << endl;
+			return -20;
+		}
+		string buf;
+		int numSolutions = 0;
+		int numWords = 0;
+		while (!AllWords.eof()) {
+			std::getline(AllWords, buf);
+			numWords++;
+		}
+		while (!SolutionWords.eof()) {
+			std::getline(SolutionWords, buf);
+			numSolutions++;
+		}
+		srand((unsigned int)time(NULL));
 
 		// WORD GENERATION
-		int wordleLine = rand() % numSolutions + 1; // wordle location (line num) in solution file
-		string wordleOfTheDay;
-		for (int wdx = 1; wdx != wordleLine; wdx++) {
-			std::getline(solutionwords, wordleOfTheDay);
-		}
-		solutionwords.seekg(0, ios_base::beg); // reset stream buffer offset ( everyone is kind and does this )
+		int wordleLine = rand() % numSolutions + 2; // line num in solution file
+		string wordleOfTheDay = {};
+		SolutionWords.seekg(0, ios_base::beg);
+		for (int wdx = 1; wdx != wordleLine; wdx++)
+			std::getline(SolutionWords, wordleOfTheDay);
 
 		// GAME SETUP
-		string* prevguesses = new string[maxguesses];
+		std::vector<std::string> prevInputs(maxGuesses);
 		int guess = 0;
 		bool guessedCorrect = false;
-		bool sneakyDebugging = false;
 
 		// GAME LOOP
-		while (guess < maxguesses && !guessedCorrect) {
+		while (!modechange && guess < maxGuesses && !guessedCorrect) {
 
-			cout << clsr;
-			if (sneakyDebugging)
-				cout << color::red << "DEBUG: Wordle is '" << wordleOfTheDay << "'." << color::wht << endl;
-			printGameBoard(wordleOfTheDay, prevguesses, maxguesses);
+			printSplash(); // cool intro
+			outputGame(wordleOfTheDay, prevInputs);
 
-			string userInputRaw = "";
-			string formattedInput = "";
-			bool inputSuccess = false;
+			offsetDisplayToCenter(32);
+			cout << "Guess #" << guess + 1 << ": Enter a" << ((wordleOfTheDay.length() == 8) ? "n " : " ")
+				<< wordleOfTheDay.length() << " letter word:";
+
+			string userInput = "";
+			int inputErrorType = -1; // -1: NoRead, 0: OK, 1: InvalChar, 2: WrongLen, 3: AlreadyExist, 4: NotWord, 5: CinErr, 6: Debug
 
 			// USER INPUT LOOP
-			while (!inputSuccess) {
-				// the prompt:
-				cout << endl << txttab /* << "Guess #" << guess + 1 */ << "Enter a "
-					<< wordleOfTheDay.length() << " letter word: " << endl << txttab << "> "; // default positive message.;
-				bool containsInvalidChars = false;
-				cin >> userInputRaw;
+			while (!modechange && inputErrorType != 0) {
 
-				// check for the worst errors first:
-				for (int c = 0; c < userInputRaw.length(); c++) {
-					// make lower case and check to make sure all chars are letters
-					if (!islower(userInputRaw[c]))
-						userInputRaw[c] = tolower(userInputRaw.c_str()[c]);
-					if (userInputRaw[c] < int('a') || userInputRaw[c] > int('z')) {
-						containsInvalidChars = true;
+				cout << endl << blocktab << " > ";
+				cin >> userInput;
+				inputErrorType = 0;
+				// initially assume the input is good, cascadingly check each scenario
+
+				for (unsigned c = 0; c < userInput.length(); c++) {
+					if (!islower(userInput[c]))
+						userInput[c] = tolower(userInput.c_str()[c]);
+					if (userInput[c] < int('a') || userInput[c] > int('z')) {
+						inputErrorType = 1;
 						break;
 					}
 				}
-				if (!cin || userInputRaw.length() != 5 || containsInvalidChars) {
+
+				if (!inputErrorType && userInput.length() != wordleOfTheDay.length())
+					inputErrorType = 2;
+
+				// check against previous inputs
+				for (int wdx = 0; !inputErrorType && wdx < maxGuesses; wdx++)
+					if (userInput == prevInputs[wdx])
+						inputErrorType = 3;
+				if (!cin) {
 					cin.clear();
 					cin.ignore(INT_MAX, '\n');
-					cout << color::red << txttab;
-					if (containsInvalidChars)
-						cout << "You may only enter letters. ";
-					else
-						cout << "You may only enter 5 letter words. ";
-					cout << color::wht;
+					inputErrorType = 5;
 				}
-				// check against answer, then against previous inputs, then files
-				else {
-					formattedInput = userInputRaw; // we trust the input to be reasonable
+				else if (!inputErrorType && !fileContains(SolutionWords, userInput, numSolutions) && !fileContains(AllWords, userInput, numWords))
+					inputErrorType = 4;
 
-					if (formattedInput == "debug") // cheat code to enable debug view
-						sneakyDebugging = true;
-					if (formattedInput == wordleOfTheDay) {
-						prevguesses[guess] = formattedInput;
-						guess++;
-						guessedCorrect = true;
-						inputSuccess = true; // input success case 1 of 2
-					}
-					else {
-						cout << txttab;
-						// cout << txttab << "DEBUG: Checking input... "; // plenty fast, no need
-						// check against previous inputs first
-						bool repeat = false;
-						for (int wdx = 0; wdx < maxguesses; wdx++) {
-							if (formattedInput == prevguesses[wdx]) {
-								cout << color::red << "Already entered." << color::wht << endl;
-								//cout << txttab << "Enter a new " << wordleOfTheDay.length() << " letter word: " << txttab; // superceded
-								repeat = true;
-								break;
-							}
-						}
-						// if not a repeat, check against files.
-						if (!repeat && (filecontains(solutionwords, formattedInput, numSolutions) || filecontains(allwords, formattedInput, numWords))) {
-							prevguesses[guess] = formattedInput;
-							guess++; // got something from the user!
-							inputSuccess = true; // input success case 2 of 2
-
-						}
-						else if (!repeat) { // if it wasn't a repeat and didn't make it through the list it is not a word
-							cout << color::red << "Not in word list." << color::wht;
-						}
-					}
+				// check special cases
+				if (userInput == wordleOfTheDay)
+					guessedCorrect = true;
+				else if (userInput == "debugmode") {
+					inputErrorType = 6;
+				}
+				else if (userInput == "babymode") {
+					modechange = true;
+					mode = MODE_BABY;
+				}
+				else if (userInput == "easymode") {
+					modechange = true;
+					mode = MODE_EASY;
+				}
+				else if (userInput == "normalmode") {
+					modechange = true;
+					mode = MODE_NORMAL;
+				}
+				else if (userInput == "hardmode") {
+					modechange = true;
+					mode = MODE_HARD;
+				}
+				else if (userInput == "expertmode") {
+					modechange = true;
+					mode = MODE_EXPERT;
+				}
+				else if (userInput == "insanemode") {
+					modechange = true;
+					mode = MODE_INSANE;
+				}
+				if (modechange)
+					inputErrorType = -1;
+				switch (inputErrorType) {
+				case 0:
+					prevInputs[guess] = userInput;
+					guess++; // got a good input
+					break;
+				case 1:
+					cout << color::red << blocktab;
+					cout << "You may only enter letters." << color::white;
+					break;
+				case 2:
+					cout << color::red << blocktab;
+					cout << "You may only enter " << wordleOfTheDay.length() << " letter words." << color::white;
+					break;
+				case 3:
+					cout << color::red << blocktab;
+					cout << "Already entered." << color::white;
+					break;
+				case 4:
+					cout << color::red << blocktab;
+					cout << "Not in word list." << color::white;
+					break;
+				case 6:
+					cout << color::red << blocktab;
+					cout << "Debug: '" << wordleOfTheDay << "'" << color::white;
+					break;
+				default: break;
 				}
 			}
 		}
 
 		// POST-GAME
-		cout << clsr;
-		printGameBoard(wordleOfTheDay, prevguesses, maxguesses);
-		if (guessedCorrect)
-			cout << endl << color::grn << txttab << "You got it!" << color::wht << endl;
-		else
-			cout << endl << color::ylw << txttab << "Better luck next time!" << color::wht << endl;
-		cout << txttab << "The word was '" << wordleOfTheDay << "'." << endl;
+		if (!modechange) {
+			printSplash();
+			offsetDisplayToCenter(watermark.length(), 1, false);
+			cout << watermark;
+			outputGame(wordleOfTheDay, prevInputs);
+			if (guessedCorrect) {
+				streak++;
+				cout << endl << color::green << blocktab << "You got it!" << color::white << endl;
+				cout << blocktab << "Streak: " << streak << endl;
+			}
+			else {
+				cout << endl << color::yellow << blocktab << "Better luck next time!" << endl;
+				if (streak > 0) {
+				cout << blocktab << "You had a streak of " << streak << "!" << color::white << endl;
+				}
+				streak = 0;
+			}
+			cout << blocktab << "The word was '" << wordleOfTheDay << "'." << endl;
 
-		delete[]prevguesses;
+			// PLAY AGAIN WITH Y
+			cout << blocktab << "Play again? (y): ";
+			cin >> buf;
+			if (!(buf[0] == 'y' || buf[0] == 'Y')) {
+				cout << blocktab << "Thanks for playing!" << endl;
+				break;
+			}
+		}
 
-		// PLAY AGAIN WITH Y
-		cout << txttab << "Play again? (Y): ";
-		cin >> buf;
-		if (buf[0] == 'y' || buf[0] == 'Y')
-			cout << clsr;
-		else break;
+		// CLEANUP FOR NEXT
+		AllWords.close();
+		SolutionWords.close();
 	}
 
-	cout << txttab << "Thanks for playing!" << endl;
-
-	// FINAL CLEANUP
-	allwords.close();
-	solutionwords.close();
 	return 0;
 }
