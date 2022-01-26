@@ -24,6 +24,7 @@
     <ProjectGuid>{991aa5ad-3e47-43be-8b31-b9bc788413bd}</ProjectGuid>
     <RootNamespace>hw3</RootNamespace>
     <WindowsTargetPlatformVersion>10.0</WindowsTargetPlatformVersion>
+    <ProjectName>WordleCpp</ProjectName>
   </PropertyGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.Default.props" />
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'" Label="Configuration">
@@ -143,9 +144,6 @@
     <ClInclude Include="splashtext.h" />
   </ItemGroup>
   <ItemGroup>
-    <ClCompile Include="Homework3_BradynBraithwaite.cpp" />
-  </ItemGroup>
-  <ItemGroup>
     <Text Include="English.txt" />
     <Text Include="Wiki.txt" />
     <Text Include="words3.txt" />
@@ -160,6 +158,9 @@
     <Text Include="words7sol.txt" />
     <Text Include="words8.txt" />
     <Text Include="words8sol.txt" />
+  </ItemGroup>
+  <ItemGroup>
+    <ClCompile Include="WordleClone.cpp" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

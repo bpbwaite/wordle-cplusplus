@@ -23,11 +23,6 @@
     </ClInclude>
   </ItemGroup>
   <ItemGroup>
-    <ClCompile Include="Homework3_BradynBraithwaite.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
-  </ItemGroup>
-  <ItemGroup>
     <Text Include="English.txt">
       <Filter>Resource Files</Filter>
     </Text>
@@ -70,5 +65,10 @@
     <Text Include="words3sol.txt">
       <Filter>Resource Files</Filter>
     </Text>
+  </ItemGroup>
+  <ItemGroup>
+    <ClCompile Include="WordleClone.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
   </ItemGroup>
 </Project>
