@@ -6,17 +6,11 @@
  * Resources: frequency lists, occasionally documentation for file io
  ********************************************************************************/
 
-#include <cstdlib>
-#include <ctime>
-#include <fstream>
-#include <cstdlib>
-#include <ctime>
-#include <fstream>
 #include <iostream>
 #include <fstream>
+#include <cstdlib>
 #include <string>
 #include <vector>
-#include <cstdlib>
 #include <ctime>
 #include <climits>
 
