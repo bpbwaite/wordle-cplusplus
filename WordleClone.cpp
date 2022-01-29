@@ -2,7 +2,7 @@
  * File:     Homework 3
  * Author:   Bradyn Braithwaite
  * Purpose:	 Recreate the Wordle minigame in C++
- * Version:  2.2 Jan 24, 2022
+ * Version:  2.3 Jan 24, 2022
  * Resources: frequency lists, occasionally documentation for file io
  ********************************************************************************/
 
@@ -21,21 +21,22 @@ using namespace std;
 int main(void)
 {
 	// DEFINITIONS & PRECONFIGURATION
-	// unique solutions for 3/4/5/6/7/8. these values work well enough
-	constexpr int SOLUTIONS_PER_GAME[] = { 120, 900, 1400, 2000, 3200, 2400 };
-	constexpr bool REBUILD_SOLUTIONS = false; // set to true for one run if changing solutions
+	// unique solutions for 3/4/5/6/7/8. these values work well
+	const int SOLUTIONS_PER_GAME[] = { 120, 900, 1400, 2000, 3200, 2400 };
+	const bool REBUILD_SOLUTIONS = false; // set to true for one run if changing solutions
 
-	constexpr int MODE_NORMAL = 0;
+	const int MODE_NORMAL = 0;
 
-	constexpr int MODE_BABY = 1;
-	constexpr int MODE_EASY = 2;
-	constexpr int MODE_HARD = 3;
-	constexpr int MODE_EXPERT = 4;
-	constexpr int MODE_INSANE = 5;
+	const int MODE_BABY = 1;
+	const int MODE_EASY = 2;
+	const int MODE_HARD = 3;
+	const int MODE_EXPERT = 4;
+	const int MODE_INSANE = 5;
 
+	int diffdefs[] = { 6, 5, 6, 3, 7, 4, 7, 6, 8, 7, 9, 8 }; // Guesses,Wordlength: for 3-8 letters
 	int mode = MODE_NORMAL;
 	int streak = 0;
-	int diffdefs[] = { 6, 5, 6, 3, 7, 4, 7, 6, 8, 7, 9, 8 }; // Guesses,Wordlength: for 3-8 letters
+	bool colorblind = false;
 
 	if (REBUILD_SOLUTIONS) {
 		for (int wordLengths = 3; wordLengths <= 8; wordLengths++) {
@@ -77,9 +78,10 @@ int main(void)
 		int wordleLine = rand() % numSolutions + 2; // line num in solution file
 		string wordleOfTheDay = {};
 		SolutionWords.seekg(0, ios_base::beg);
-		for (int wdx = 1; wdx != wordleLine; wdx++)
+		for (int wdx = 1; wdx != wordleLine; wdx++) {
 			std::getline(SolutionWords, wordleOfTheDay);
-
+		}
+		removeNewLineChars(wordleOfTheDay);
 		// GAME SETUP
 		std::vector<std::string> prevInputs(maxGuesses);
 		int guess = 0;
@@ -89,14 +91,14 @@ int main(void)
 		while (!modechange && guess < maxGuesses && !guessedCorrect) {
 
 			printSplash(); // cool intro
-			outputGame(wordleOfTheDay, prevInputs);
+			outputGame(wordleOfTheDay, prevInputs, colorblind);
 
 			offsetDisplayToCenter(32);
 			cout << "Guess #" << guess + 1 << ": Enter a" << ((wordleOfTheDay.length() == 8) ? "n " : " ")
 				<< wordleOfTheDay.length() << " letter word:";
 
 			string userInput = "";
-			int inputErrorType = -1; // -1: NoRead, 0: OK, 1: InvalChar, 2: WrongLen, 3: AlreadyExist, 4: NotWord, 5: CinErr, 6: Debug
+			int inputErrorType = -1; // -1: NoRead, 0: OK, 1: InvalChar, 2: WrongLen, 3: AlreadyExist, 4: NotWord, 5: CinErr, 6: Debug, 7: Color
 
 			// USER INPUT LOOP
 			while (!modechange && inputErrorType != 0) {
@@ -133,9 +135,11 @@ int main(void)
 				// check special cases
 				if (userInput == wordleOfTheDay)
 					guessedCorrect = true;
-				else if (userInput == "debugmode") {
+				else if (userInput == "debugmode")
 					inputErrorType = 6;
-				}
+				else if (userInput == "colorblindmode") 
+					inputErrorType = 7;
+				
 				else if (userInput == "babymode") {
 					modechange = true;
 					mode = MODE_BABY;
@@ -187,6 +191,10 @@ int main(void)
 					cout << color::red << blocktab;
 					cout << "Debug: '" << wordleOfTheDay << "'" << color::white;
 					break;
+				case 7:
+					colorblind = !colorblind;
+					cout << blocktab << "ColorBlind: " << (colorblind ? "on" : "off");
+					break;
 				default: break;
 				}
 			}
@@ -197,7 +205,7 @@ int main(void)
 			printSplash();
 			offsetDisplayToCenter(watermark.length(), 1, false);
 			cout << watermark;
-			outputGame(wordleOfTheDay, prevInputs);
+			outputGame(wordleOfTheDay, prevInputs, colorblind);
 			if (guessedCorrect) {
 				streak++;
 				cout << endl << color::green << blocktab << "You got it!" << color::white << endl;
@@ -206,14 +214,14 @@ int main(void)
 			else {
 				cout << endl << color::yellow << blocktab << "Better luck next time!" << endl;
 				if (streak > 0) {
-				cout << blocktab << "You had a streak of " << streak << "!" << color::white << endl;
+					cout << blocktab << "You had a streak of " << streak << "!" << color::white << endl;
 				}
 				streak = 0;
 			}
 			cout << blocktab << "The word was '" << wordleOfTheDay << "'." << endl;
 
 			// PLAY AGAIN WITH Y
-			cout << blocktab << "Play again? (y): ";
+			cout << blocktab << color::white << "Play again? (y): ";
 			cin >> buf;
 			if (!(buf[0] == 'y' || buf[0] == 'Y')) {
 				cout << blocktab << "Thanks for playing!" << endl;

@@ -1,7 +1,7 @@
 /********************************************************************************
  * File:      wordleHelper.h
  * Author:    Bradyn Braithwaite
- * Purpose:	  supply supplemental functions to the game
+ * Purpose:	  supplemental functions to the game
  ********************************************************************************/
 #pragma once
 
@@ -16,15 +16,16 @@
 using namespace std;
 
 constexpr int displayCenter = 60;
+constexpr int BUFMAX = 128;
 
-void printSplash()
+inline void printSplash()
 {
 	cout << clearscreen;
 	for (unsigned ln = 0; ln < Splash.size(); ln++) {
 		cout << color::lightblue << Splash.at(ln).c_str() << endl;
 	}
 }
-void offsetDisplayToCenter(int linelength, int charwidth = 1, bool newline = true)
+inline void offsetDisplayToCenter(int linelength, int charwidth = 1, bool newline = true)
 {
 	if(newline)
 	cout << endl;
@@ -32,7 +33,7 @@ void offsetDisplayToCenter(int linelength, int charwidth = 1, bool newline = tru
 		cout << " ";
 	}
 }
-bool stringContains(string s, char c)
+inline bool stringContains(string s, char c)
 {
 	for (unsigned j = 0; j < s.length(); j++) {
 		if (s[j] == c) {
@@ -40,6 +41,11 @@ bool stringContains(string s, char c)
 		}
 	}
 	return false;
+}
+inline void removeNewLineChars(string& str)
+{
+	str.erase(std::remove(str.begin(), str.end(), '\n'), str.end());
+	str.erase(std::remove(str.begin(), str.end(), '\r'), str.end());
 }
 bool fileContains(std::fstream& file, string s, int lines)
 {
@@ -54,15 +60,23 @@ bool fileContains(std::fstream& file, string s, int lines)
 	bool found = false;
 	for (int wdx = 1; !found && wdx <= lines; wdx++) {
 		std::getline(file, buf);
+		removeNewLineChars(buf);
 		found = buf == s;
 	}
 	return found;
 }
-void outputGame(string answer, std::vector<std::string> Entries)
+void outputGame(string answer, std::vector<std::string> Entries, bool altColors = false)
 {
-	int nth_word;
-	int max = Entries.size();
-
+	int nth_word, max = Entries.size();
+	string color_true, color_almost;
+	if (altColors) {
+	color_true = color::yellow;
+	color_almost = color::lightblue;
+	}
+	else {
+	color_true = color::green;
+	color_almost = color::yellow;
+	}
 	// ARRAY PORTION
 	string posedCorrectly;
 	for (nth_word = 0; nth_word < max; nth_word++) {
@@ -102,10 +116,10 @@ void outputGame(string answer, std::vector<std::string> Entries)
 				cout << color::white;
 				break;
 			case 1: // exists in word
-				cout << color::yellow;
+				cout << color_almost;
 				break;
 			case 2: // perfect
-				cout << color::green;
+				cout << color_true;
 				break;
 			default: break;
 			}
@@ -158,10 +172,10 @@ void outputGame(string answer, std::vector<std::string> Entries)
 			cout << color::black << keyboard_uppercase[acdx];
 			break;
 		case 2: // exists in word
-			cout << color::yellow << keyboard_uppercase[acdx];
+			cout << color_almost << keyboard_uppercase[acdx];
 			break;
 		case 3: // perfect
-			cout << color::green << keyboard_uppercase[acdx];
+			cout << color_true << keyboard_uppercase[acdx];
 			break;
 		default: break;
 		}
@@ -169,6 +183,7 @@ void outputGame(string answer, std::vector<std::string> Entries)
 	}
 	cout << endl;
 }
+// todo: merge function abilities
 void scrapeEnglishWordsToFile(int length)
 {
 	string buf;
@@ -180,6 +195,7 @@ void scrapeEnglishWordsToFile(int length)
 		cerr << color::red << "Unable to open dictionary file!" << color::white << endl;
 	while (!English.eof()) {
 		std::getline(English, buf);
+		removeNewLineChars(buf);
 		if (buf.length() == length) {
 			wordsfile << endl; // easily removable line
 			wordsfile << buf;
@@ -209,9 +225,10 @@ void scrapeCommonWordsToFile(int targetlength, int amount = 2300, bool solutionf
 	while (ldx <= amount && !Wiki.eof()) {
 		string wordbuf("", targetlength);
 		// temporary reserve
-		char tempWordbuf[128];
+		char tempWordbuf[BUFMAX];
 
 		std::getline(Wiki, linebuf);
+		removeNewLineChars(linebuf);
 		unsigned chx;
 		for (chx = 0; chx < linebuf.length(); chx++) {
 			if (linebuf[chx] == ' ')
