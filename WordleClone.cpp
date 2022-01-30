@@ -20,36 +20,20 @@ using namespace std;
 
 int main(void)
 {
-	// DEFINITIONS & PRECONFIGURATION
-	// unique solutions for 3/4/5/6/7/8. these values work well
-	const int SOLUTIONS_PER_GAME[] = { 120, 900, 1400, 2000, 3200, 2400 };
-	const bool REBUILD_SOLUTIONS = false; // set to true for one run if changing solutions
-
-	const int MODE_NORMAL = 0;
-
-	const int MODE_BABY = 1;
-	const int MODE_EASY = 2;
-	const int MODE_HARD = 3;
-	const int MODE_EXPERT = 4;
-	const int MODE_INSANE = 5;
-
-	int diffdefs[] = { 6, 5, 6, 3, 7, 4, 7, 6, 8, 7, 9, 8 }; // Guesses,Wordlength: for 3-8 letters
-	int mode = MODE_NORMAL;
+	int wordleLength = MODE_L5;
 	int streak = 0;
 	bool colorblind = false;
+	bool hardmode = false;
 
 	if (REBUILD_SOLUTIONS) {
-		for (int wordLengths = 3; wordLengths <= 8; wordLengths++) {
-			scrapeEnglishWordsToFile(wordLengths);
-			scrapeCommonWordsToFile(wordLengths, SOLUTIONS_PER_GAME[wordLengths - 3]);
-		}
+		rebuildSolutions();
+		return EXIT_DICTIONARY_OK;
 	}
 
 	// MAIN LOOP
-	while (!REBUILD_SOLUTIONS) {
+	do {
 		bool modechange = false;
-		int maxGuesses = diffdefs[mode * 2];
-		int wordleLength = diffdefs[mode * 2 + 1];
+		int maxGuesses = difficulties[wordleLength];
 
 		// FILE SETUP & WORD COUNTER
 		string wordFileName = "words" + to_string(wordleLength) + ".txt";
@@ -59,7 +43,7 @@ int main(void)
 
 		if (!AllWords.is_open() || !SolutionWords.is_open()) {
 			cerr << color::red << "Unable to open local dictionary files!" << color::white << endl;
-			return -20;
+			return EXIT_FAILURE;
 		}
 		string buf;
 		int numSolutions = 0;
@@ -98,102 +82,99 @@ int main(void)
 				<< wordleOfTheDay.length() << " letter word:";
 
 			string userInput = "";
-			int inputErrorType = -1; // -1: NoRead, 0: OK, 1: InvalChar, 2: WrongLen, 3: AlreadyExist, 4: NotWord, 5: CinErr, 6: Debug, 7: Color
+			int inputErrorType = WER_NOREAD; 
 
 			// USER INPUT LOOP
-			while (!modechange && inputErrorType != 0) {
+			while (!modechange && inputErrorType != WER_OK) {
 
 				cout << endl << blocktab << " > ";
 				cin >> userInput;
-				inputErrorType = 0;
+				inputErrorType = WER_OK;
 				// initially assume the input is good, cascadingly check each scenario
 
 				for (unsigned c = 0; c < userInput.length(); c++) {
 					if (!islower(userInput[c]))
 						userInput[c] = tolower(userInput.c_str()[c]);
 					if (userInput[c] < int('a') || userInput[c] > int('z')) {
-						inputErrorType = 1;
+						inputErrorType = WER_INVCHAR;
 						break;
 					}
 				}
 
 				if (!inputErrorType && userInput.length() != wordleOfTheDay.length())
-					inputErrorType = 2;
+					inputErrorType = WER_WLEN;
 
 				// check against previous inputs
 				for (int wdx = 0; !inputErrorType && wdx < maxGuesses; wdx++)
-					if (userInput == prevInputs[wdx])
-						inputErrorType = 3;
+					if (userInput == prevInputs[wdx]) {
+						inputErrorType = WER_EXIST;
+						break;
+					}
 				if (!cin) {
 					cin.clear();
 					cin.ignore(INT_MAX, '\n');
-					inputErrorType = 5;
+					inputErrorType = WER_CIN;
 				}
+				else if (hardmode && !validInHardMode(prevInputs, userInput, wordleOfTheDay))
+					inputErrorType = WER_MUSTUSE;
 				else if (!inputErrorType && !fileContains(SolutionWords, userInput, numSolutions) && !fileContains(AllWords, userInput, numWords))
-					inputErrorType = 4;
+					inputErrorType = WER_DICT;
 
 				// check special cases
 				if (userInput == wordleOfTheDay)
 					guessedCorrect = true;
-				else if (userInput == "debugmode")
-					inputErrorType = 6;
-				else if (userInput == "colorblindmode") 
-					inputErrorType = 7;
+				if (userInput == "debugme")
+					inputErrorType = WER_DEBUG;
+				if (userInput == "colorblindmode")
+					inputErrorType = WER_COLOR;
+				if (userInput == "hardmode")
+					inputErrorType = WER_HMODE;
 				
-				else if (userInput == "babymode") {
+				// mode changing logic
+				short usermodenum = atoi(userInput.c_str());
+				if (usermodenum >= MODE_L3 && usermodenum <= MODE_L8) {
 					modechange = true;
-					mode = MODE_BABY;
-				}
-				else if (userInput == "easymode") {
-					modechange = true;
-					mode = MODE_EASY;
-				}
-				else if (userInput == "normalmode") {
-					modechange = true;
-					mode = MODE_NORMAL;
-				}
-				else if (userInput == "hardmode") {
-					modechange = true;
-					mode = MODE_HARD;
-				}
-				else if (userInput == "expertmode") {
-					modechange = true;
-					mode = MODE_EXPERT;
-				}
-				else if (userInput == "insanemode") {
-					modechange = true;
-					mode = MODE_INSANE;
+					wordleLength = usermodenum;
 				}
 				if (modechange)
-					inputErrorType = -1;
+					inputErrorType = WER_MODECHANGE;
+				
 				switch (inputErrorType) {
-				case 0:
+				case WER_OK:
 					prevInputs[guess] = userInput;
 					guess++; // got a good input
 					break;
-				case 1:
+				case WER_INVCHAR:
 					cout << color::red << blocktab;
 					cout << "You may only enter letters." << color::white;
 					break;
-				case 2:
+				case WER_WLEN:
 					cout << color::red << blocktab;
 					cout << "You may only enter " << wordleOfTheDay.length() << " letter words." << color::white;
 					break;
-				case 3:
+				case WER_EXIST:
 					cout << color::red << blocktab;
 					cout << "Already entered." << color::white;
 					break;
-				case 4:
+				case WER_DICT:
 					cout << color::red << blocktab;
 					cout << "Not in word list." << color::white;
 					break;
-				case 6:
+				case WER_DEBUG:
 					cout << color::red << blocktab;
 					cout << "Debug: '" << wordleOfTheDay << "'" << color::white;
 					break;
-				case 7:
+				case WER_COLOR:
 					colorblind = !colorblind;
 					cout << blocktab << "ColorBlind: " << (colorblind ? "on" : "off");
+					break;
+				case WER_HMODE:
+					hardmode = !hardmode;
+					cout << blocktab << "Hard Mode: " << (hardmode ? "on" : "off");
+					break;
+				case WER_MUSTUSE:
+					cout << color::red << blocktab;
+					cout << "Hard Mode: Must reuse all revealed letters!" << color::white;
 					break;
 				default: break;
 				}
@@ -232,7 +213,7 @@ int main(void)
 		// CLEANUP FOR NEXT
 		AllWords.close();
 		SolutionWords.close();
-	}
 
-	return 0;
+	} while (true);
+	return EXIT_SUCCESS;
 }

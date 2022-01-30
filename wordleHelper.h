@@ -27,8 +27,8 @@ inline void printSplash()
 }
 inline void offsetDisplayToCenter(int linelength, int charwidth = 1, bool newline = true)
 {
-	if(newline)
-	cout << endl;
+	if (newline)
+		cout << endl;
 	for (int spx = 0; spx < (displayCenter - charwidth * linelength / 2); spx++) {
 		cout << " ";
 	}
@@ -65,17 +65,36 @@ bool fileContains(std::fstream& file, string s, int lines)
 	}
 	return found;
 }
+bool validInHardMode(std::vector<std::string> Entries, string input, string answer)
+{
+	string requirements = "";
+	for (int edx = 0; edx < Entries.size(); edx++) {
+		if (Entries.at(edx).empty())
+			break;
+		for (int sdx = 0; sdx < answer.length(); sdx++) {
+			char t = Entries.at(edx)[sdx];
+			if (stringContains(answer, t))
+				requirements += t;
+		}
+	}
+	bool foundAllRequirements = true;
+	for (int rdx = 0; rdx < requirements.length(); rdx++) {
+		if (!stringContains(input, requirements[rdx]))
+			return false;
+	}
+	return true;
+}
 void outputGame(string answer, std::vector<std::string> Entries, bool altColors = false)
 {
 	int nth_word, max = Entries.size();
 	string color_true, color_almost;
 	if (altColors) {
-	color_true = color::yellow;
-	color_almost = color::lightblue;
+		color_true = color::yellow;
+		color_almost = color::lightblue;
 	}
 	else {
-	color_true = color::green;
-	color_almost = color::yellow;
+		color_true = color::green;
+		color_almost = color::yellow;
 	}
 	// ARRAY PORTION
 	string posedCorrectly;
@@ -246,10 +265,17 @@ void scrapeCommonWordsToFile(int targetlength, int amount = 2300, bool solutionf
 				solutionFile << endl << wordbuf;
 				ldx++;
 			}
-			
+
 		}
 	}
 	Wiki.close();
 	solutionFile.close();
 	cout << color::red << "Done." << color::white << endl;
+}
+inline void rebuildSolutions()
+{
+	for (int wordLengths = MODE_L3; wordLengths <= MODE_L8; wordLengths++) {
+		scrapeEnglishWordsToFile(wordLengths);
+		scrapeCommonWordsToFile(wordLengths, SOLUTIONS_PER_GAME[wordLengths - MODE_L3]);
+	}
 }
