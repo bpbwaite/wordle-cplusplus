@@ -37,13 +37,17 @@ const bool REBUILD_SOLUTIONS = false;
 
 #define EXIT_DICTIONARY_OK 5
 
+/*
 static const std::vector<std::string> Splash = {
+	
 "\t\t\t\t\t                          | | |     	     ",
 "\t\t\t\t\t                   _ __ __| | | ___ 	     ",
 "\t\t\t\t\t    \\ \\ /\\ / / _ \\|  __/ _  | |/   \\ ",
 "\t\t\t\t\t     \\ V  V / (_) | | | (_| | |  __/	 ",
 "\t\t\t\t\t      \\_/\\_/ \\___/| |  \\____|_|\\___| "
 };
+*/
+
 string watermark = "C++ clone for CS225 - 2022 by B.P. Braithwaite";
 namespace color {
 	string white = "\033[0m";
