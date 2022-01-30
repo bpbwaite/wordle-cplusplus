@@ -21,9 +21,11 @@ constexpr int BUFMAX = 128;
 inline void printSplash()
 {
 	cout << clearscreen;
+	/* 
 	for (unsigned ln = 0; ln < Splash.size(); ln++) {
 		cout << color::lightblue << Splash.at(ln).c_str() << endl;
 	}
+	*/ cout << endl;
 }
 inline void offsetDisplayToCenter(int linelength, int charwidth = 1, bool newline = true)
 {
