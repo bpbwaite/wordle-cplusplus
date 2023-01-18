@@ -1,6 +1,6 @@
 /********************************************************************************
  * File:      splashtext.h
- * Author:    Bradyn Braithwaite
+ * Author:    B. Braithwaite
  * Purpose:	  contains strings and defines used by game
  ********************************************************************************/
 #pragma once
