@@ -1,6 +1,6 @@
 /********************************************************************************
  * File:      wordleHelper.h
- * Author:    Bradyn Braithwaite
+ * Author:    B. Braithwaite
  * Purpose:	  supplemental functions to the game
  ********************************************************************************/
 #pragma once
