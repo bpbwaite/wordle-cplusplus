@@ -1,6 +1,6 @@
 /********************************************************************************
  * File:     Homework 3
- * Author:   Bradyn Braithwaite
+ * Author:   B. Braithwaite
  * Purpose:	 Recreate the Wordle minigame in C++
  * Version:  2.3 Jan 24, 2022
  * Resources: frequency lists, occasionally documentation for file io
